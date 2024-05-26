@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Depends
 
-from sqlmodel import Session, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
+
 from app.db import init_db, get_session
 from app.models import Song, SongCreate, SongBase  # noqa
 
@@ -8,8 +10,8 @@ app = FastAPI()
 
 
 @app.on_event("startup")
-def on_startup():
-    init_db()
+async def on_startup():
+    await init_db()
 
 
 @app.get("/ping")
@@ -18,9 +20,9 @@ async def pong():
 
 
 @app.get("/songs", response_model=list[Song])
-def get_songs(session: Session = Depends(get_session)):
-    result = session.execute(select(Song))
-    songs: [Song] = result.scalars().all()
+async def get_songs(session: AsyncSession = Depends(get_session)):
+    result = await session.execute(select(Song))
+    songs = result.scalars().all()
     return [
         Song(
             id=song.id,
@@ -32,12 +34,12 @@ def get_songs(session: Session = Depends(get_session)):
 
 
 @app.post("/songs")
-def add_song(song: SongBase, session: Session = Depends(get_session)):
+async def add_song(song: SongCreate, session: AsyncSession = Depends(get_session)):
     song = Song(
         name=song.name,
         artist=song.artist
     )
     session.add(song)
-    session.commit()
-    session.refresh(song)
+    await session.commit()
+    await session.refresh(song)
     return song
