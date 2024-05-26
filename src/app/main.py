@@ -3,15 +3,10 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from app.db import init_db, get_session
+from app.db import get_session
 from app.models import Song, SongCreate, SongBase  # noqa
 
 app = FastAPI()
-
-
-@app.on_event("startup")
-async def on_startup():
-    await init_db()
 
 
 @app.get("/ping")
